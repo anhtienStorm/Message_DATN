@@ -1,0 +1,8 @@
+include ':messaging'
+include ':common'
+include ':phone-common'
+include ':vcard'
+include ':chips'
+include ':photoviewer'
+include ':framesequence'
+rootProject.name = "Message_DATN"
