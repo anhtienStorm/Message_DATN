@@ -18,6 +18,7 @@ package com.android.messaging.ui;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.PendingIntent;
+import android.app.role.RoleManager;
 import android.appwidget.AppWidgetManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
@@ -38,6 +39,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.TaskStackBuilder;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.android.ex.photo.Intents.PhotoViewIntentBuilder;
 import com.android.messaging.R;
@@ -495,8 +497,14 @@ public class UIIntentsImpl extends UIIntents {
 
     @Override
     public Intent getChangeDefaultSmsAppIntent(final Activity activity) {
-        final Intent intent = new Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
-        intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, activity.getPackageName());
+        final Intent intent;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            RoleManager roleManager = activity.getSystemService(RoleManager.class);
+            intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS);
+        } else {
+            intent = new Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
+            intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, activity.getPackageName());
+        }
         return intent;
     }
 

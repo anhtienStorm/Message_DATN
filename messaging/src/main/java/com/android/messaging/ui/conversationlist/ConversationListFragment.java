@@ -17,7 +17,9 @@ package com.android.messaging.ui.conversationlist;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.role.RoleManager;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -27,6 +29,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewGroupCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.provider.Telephony;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,7 +42,9 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.view.ViewPropertyAnimator;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.AbsListView;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.android.messaging.R;
 import com.android.messaging.annotation.VisibleForAnimation;
@@ -94,6 +100,9 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     private ListEmptyView mEmptyListMessageView;
     private ConversationListAdapter mAdapter;
 
+    private LinearLayout setSMSAppDefaultView;
+    private Button setSMSAppDefault;
+
     // Saved Instance State Data - only for temporal data which is nice to maintain but not
     // critical for correctness.
     private static final String SAVED_INSTANCE_STATE_LIST_VIEW_STATE_KEY =
@@ -137,6 +146,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         setScrolledToNewestConversationIfNeeded();
 
         updateUi();
+        checkSMSAppDefault();
     }
 
     public void setScrolledToNewestConversationIfNeeded() {
@@ -172,6 +182,21 @@ public class ConversationListFragment extends Fragment implements ConversationLi
             final Bundle savedInstanceState) {
         final ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.conversation_list_fragment,
                 container, false);
+
+        setSMSAppDefaultView = rootView.findViewById(R.id.set_sms_app_default_view);
+        setSMSAppDefault = rootView.findViewById(R.id.bt_set_sms_app_default);
+        setSMSAppDefault.setOnClickListener(v -> {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                RoleManager roleManager = getActivity().getSystemService(RoleManager.class);
+                Intent roleRequestIntent = roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS);
+                startActivityForResult(roleRequestIntent, 1);
+            } else {
+                Intent intent = new Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
+                intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, getActivity().getPackageName());
+                startActivityForResult(intent, 1);
+            }
+        });
+
         mRecyclerView = (RecyclerView) rootView.findViewById(android.R.id.list);
         mEmptyListMessageView = (ListEmptyView) rootView.findViewById(R.id.no_conversations_view);
         mEmptyListMessageView.setImageHint(R.drawable.ic_oobe_conv_list);
@@ -241,6 +266,39 @@ public class ConversationListFragment extends Fragment implements ConversationLi
 
         setHasOptionsMenu(true);
         return rootView;
+    }
+
+    private void checkSMSAppDefault() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            RoleManager roleManager = getActivity().getSystemService(RoleManager.class);
+            boolean isRoleAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_SMS);
+            if (isRoleAvailable) {
+                boolean isRoleHeld = roleManager.isRoleHeld(RoleManager.ROLE_SMS);
+                if (!isRoleHeld) {
+                    mRecyclerView.setVisibility(View.GONE);
+                    mEmptyListMessageView.setVisibility(View.GONE);
+                    mStartNewConversationButton.setVisibility(View.GONE);
+                    setSMSAppDefaultView.setVisibility(View.VISIBLE);
+                } else {
+                    mRecyclerView.setVisibility(View.VISIBLE);
+                    mStartNewConversationButton.setVisibility(View.VISIBLE);
+                    setSMSAppDefaultView.setVisibility(View.GONE);
+                }
+            }
+        } else {
+            String currentDefault = Telephony.Sms.getDefaultSmsPackage(getActivity());
+            boolean isDefault = getActivity().getPackageName().equals(currentDefault);
+            if (!isDefault) {
+                mRecyclerView.setVisibility(View.GONE);
+                mEmptyListMessageView.setVisibility(View.GONE);
+                mStartNewConversationButton.setVisibility(View.GONE);
+                setSMSAppDefaultView.setVisibility(View.VISIBLE);
+            } else {
+                mRecyclerView.setVisibility(View.VISIBLE);
+                mStartNewConversationButton.setVisibility(View.VISIBLE);
+                setSMSAppDefaultView.setVisibility(View.GONE);
+            }
+        }
     }
 
     @Override

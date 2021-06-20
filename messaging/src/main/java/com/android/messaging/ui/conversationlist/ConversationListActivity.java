@@ -19,6 +19,7 @@ package com.android.messaging.ui.conversationlist;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.drawable.ColorDrawable;
@@ -260,12 +261,12 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             publishProgress(strings[0]);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (ENCRYPT.equals(strings[0])) {
-//                    encryptAllMessage(strings[1]);
+                    encryptAllMessage(strings[1]);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putBoolean(ENCRYPT, true);
                     editor.apply();
                 } else if (DECRYPT.equals(strings[0])) {
-//                    decryptAllMessage(strings[1]);
+                    decryptAllMessage(strings[1]);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putBoolean(ENCRYPT, false);
                     editor.apply();
@@ -279,7 +280,7 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             super.onProgressUpdate(values);
             progressDialog = new ProgressDialog(activity);
             progressDialog.show();
-            View view = activity.getLayoutInflater().inflate(R.layout.progress_dialog_layout, null);
+            View view = getLayoutInflater().inflate(R.layout.progress_dialog_layout, null);
             TextView textLoading = view.findViewById(R.id.text_loading);
             textLoading.setText(values[0] + "ing...");
             progressDialog.setContentView(view);

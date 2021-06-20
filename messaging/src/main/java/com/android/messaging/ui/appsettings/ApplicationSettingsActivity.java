@@ -17,6 +17,7 @@
 package com.android.messaging.ui.appsettings;
 
 import android.app.FragmentTransaction;
+import android.app.role.RoleManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -30,7 +31,11 @@ import android.preference.PreferenceScreen;
 import android.preference.RingtonePreference;
 import android.preference.TwoStatePreference;
 import android.provider.Settings;
+
+import androidx.annotation.Nullable;
 import androidx.core.app.NavUtils;
+
+import android.provider.Telephony;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -122,6 +127,18 @@ public class ApplicationSettingsActivity extends BugleActionBarActivity {
             mSmsEnabledPrefKey = getString(R.string.sms_enabled_pref_key);
             mSmsEnabledPreference = findPreference(mSmsEnabledPrefKey);
             mIsSmsPreferenceClicked = false;
+
+            mSmsDisabledPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        RoleManager roleManager = getActivity().getSystemService(RoleManager.class);
+                        Intent roleRequestIntent = roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS);
+                        startActivityForResult(roleRequestIntent, 1);
+                    }
+                    return false;
+                }
+            });
 
             final SharedPreferences prefs = getPreferenceScreen().getSharedPreferences();
             updateSoundSummary(prefs);
