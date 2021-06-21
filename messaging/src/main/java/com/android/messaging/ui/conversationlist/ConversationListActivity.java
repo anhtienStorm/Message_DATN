@@ -42,6 +42,9 @@ import android.widget.Toast;
 
 import com.android.messaging.R;
 import com.android.messaging.SmsSecure;
+import com.android.messaging.datamodel.action.DeleteAllMessageAction;
+import com.android.messaging.datamodel.action.DeleteMessageAction;
+import com.android.messaging.datamodel.action.SyncMessagesAction;
 import com.android.messaging.ui.UIIntents;
 import com.android.messaging.util.DebugUtils;
 import com.android.messaging.util.Trace;
@@ -211,11 +214,15 @@ public class ConversationListActivity extends AbstractConversationListActivity {
         int d = 0;
         while (cursor.moveToNext()) {
             String body = cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY));
+            String message_id = cursor.getString(cursor.getColumnIndex(Telephony.Sms._ID));
             ContentValues values = new ContentValues();
             values.put(Telephony.Sms.BODY, SmsSecure.encrypt("encrypted_by_AT" + body));
             int numRowsUpdated = getContentResolver().update(Telephony.Sms.CONTENT_URI, values,
                     Telephony.Sms._ID + "=?",
-                    new String[]{String.valueOf(cursor.getString(cursor.getColumnIndex(Telephony.Sms._ID)))});
+                    new String[]{message_id});
+            Log.d("TienNAb", "encryptAllMessage: "+message_id);
+            DeleteAllMessageAction.deleteAllMessage(message_id);
+            SyncMessagesAction.immediateSync();
             d += numRowsUpdated;
         }
         Log.d("TienNAb", "updateMessage: " + d);
@@ -230,6 +237,7 @@ public class ConversationListActivity extends AbstractConversationListActivity {
         int d = 0;
         while (cursor.moveToNext()) {
             String body = cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY));
+            String message_id = cursor.getString(cursor.getColumnIndex(Telephony.Sms._ID));
             String decryptBody = SmsSecure.decrypt(body);
             ContentValues values = new ContentValues();
             if (decryptBody == null){
@@ -241,7 +249,10 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             }
             int numRowsUpdated = getContentResolver().update(Telephony.Sms.CONTENT_URI, values,
                     Telephony.Sms._ID + "=?",
-                    new String[]{String.valueOf(cursor.getString(cursor.getColumnIndex(Telephony.Sms._ID)))});
+                    new String[]{message_id});
+            Log.d("TienNAb", "decryptAllMessage: "+message_id);
+            DeleteAllMessageAction.deleteAllMessage(message_id);
+            SyncMessagesAction.immediateSync();
             d += numRowsUpdated;
         }
         Log.d("TienNAb", "updateMessage: " + d);
