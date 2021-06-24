@@ -24,6 +24,7 @@ import android.os.Parcelable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.ex.chips.BaseRecipientAdapter;
 import com.android.messaging.datamodel.BugleDatabaseOperations;
 import com.android.messaging.datamodel.DataModel;
 import com.android.messaging.datamodel.DatabaseHelper;
@@ -39,16 +40,15 @@ import com.android.messaging.util.LogUtil;
 public class DeleteAllMessageAction extends Action implements Parcelable {
     private static final String TAG = LogUtil.BUGLE_DATAMODEL_TAG;
 
-    public static void deleteAllMessage(final String messageId) {
-        final DeleteAllMessageAction action = new DeleteAllMessageAction(messageId);
+    public static void deleteAllMessage() {
+        final DeleteAllMessageAction action = new DeleteAllMessageAction();
         action.start();
     }
 
     private static final String KEY_MESSAGE_ID = "message_id";
 
-    private DeleteAllMessageAction(final String messageId) {
+    private DeleteAllMessageAction() {
         super();
-        actionParameters.putString(KEY_MESSAGE_ID, messageId);
     }
 
     // Doing this work in the background so that we're not competing with sync
@@ -61,32 +61,37 @@ public class DeleteAllMessageAction extends Action implements Parcelable {
     @Override
     protected Bundle doBackgroundWork() {
         final DatabaseWrapper db = DataModel.get().getDatabase();
-        Cursor cursor = db.query(DatabaseHelper.MESSAGES_TABLE,
-                new String[] { DatabaseHelper.MessageColumns._ID },
-                null,
-                null,
-                null, null, null);
-        Log.d("TienNAb", "doBackgroundWork: "+cursor.getCount());
 
-        // First find the thread id for this conversation.
-        final String messageId = actionParameters.getString(KEY_MESSAGE_ID);
+        Cursor cursor = null;
+        try {
+            cursor = db.query(DatabaseHelper.MESSAGES_TABLE,
+                    new String[]{DatabaseHelper.MessageColumns._ID},
+                    null,
+                    null,
+                    null, null, null);
 
-        if (!TextUtils.isEmpty(messageId)) {
-            // Check message still exists
-            final MessageData message = BugleDatabaseOperations.readMessage(db, messageId);
-            if (message != null) {
-                // Delete from local DB
-                int count = BugleDatabaseOperations.deleteMessage(db, messageId);
-                if (count > 0) {
-                    LogUtil.i(TAG, "DeleteMessageAction: Deleted local message "
-                            + messageId);
-                } else {
-                    LogUtil.w(TAG, "DeleteMessageAction: Could not delete local message "
-                            + messageId);
-                }
-                MessagingContentProvider.notifyMessagesChanged(message.getConversationId());
-                // We may have changed the conversation list
-                MessagingContentProvider.notifyConversationListChanged();
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    // First find the thread id for this conversation.
+//                    final String messageId = actionParameters.getString(KEY_MESSAGE_ID);
+                    final String messageId = cursor.getString(0);
+
+                    if (!TextUtils.isEmpty(messageId)) {
+                        // Check message still exists
+                        final MessageData message = BugleDatabaseOperations.readMessage(db, messageId);
+                        if (message != null) {
+                            // Delete from local DB
+                            int count = BugleDatabaseOperations.deleteMessage(db, messageId);
+                            if (count > 0) {
+                                LogUtil.i(TAG, "DeleteMessageAction: Deleted local message "
+                                        + messageId);
+                            } else {
+                                LogUtil.w(TAG, "DeleteMessageAction: Could not delete local message "
+                                        + messageId);
+                            }
+                            MessagingContentProvider.notifyMessagesChanged(message.getConversationId());
+                            // We may have changed the conversation list
+                            MessagingContentProvider.notifyConversationListChanged();
 
 //                final Uri messageUri = message.getSmsMessageUri();
 //                if (messageUri != null) {
@@ -104,8 +109,15 @@ public class DeleteAllMessageAction extends Action implements Parcelable {
 //                    LogUtil.i(TAG, "DeleteMessageAction: Local message " + messageId
 //                            + " has no telephony uri.");
 //                }
-            } else {
-                LogUtil.w(TAG, "DeleteMessageAction: Message " + messageId + " no longer exists");
+                        } else {
+                            LogUtil.w(TAG, "DeleteMessageAction: Message " + messageId + " no longer exists");
+                        }
+                    }
+                }
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
             }
         }
         return null;

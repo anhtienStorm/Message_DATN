@@ -61,7 +61,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.messaging.R;
 import com.android.messaging.datamodel.DataModel;
@@ -823,6 +825,17 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
                         null /*commandToRunAfterActionConditionResolved*/);
             }
             return true;
+        } else if (itemId == R.id.action_decrypt) {
+            View inputPassLayout = getActivity().getLayoutInflater().inflate(R.layout.input_password_layout, null);
+            EditText inputPass = inputPassLayout.findViewById(R.id.input_password);
+            androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getActivity());
+            builder.setTitle("Nhập vào mật khẩu")
+                    .setView(inputPassLayout)
+                    .setPositiveButton("Ok", (dialogInterface, i) -> {
+//                        new DecryptAsyncTask(this).execute(inputPass.getText().toString());
+                    })
+                    .setNegativeButton("Huỷ", (dialogInterface, i) -> {})
+                    .create().show();
         }
         return super.onOptionsItemSelected(item);
     }

@@ -28,6 +28,7 @@ public class SmsSecure {
 
     private static IvParameterSpec ivspec;
     private static SecretKeySpec secretKey;
+    private static SecretKeySpec secretKeyS;
 
     public static void generateIV(){
         byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -40,6 +41,18 @@ public class SmsSecure {
             KeySpec spec = new PBEKeySpec(pass.toCharArray(), SALT.getBytes(), 65536, 256);
             SecretKey tmp = factory.generateSecret(spec);
             secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void generateSecretKeyS(){
+        try {
+            String pass = "encrypted_by_AT";
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec spec = new PBEKeySpec(pass.toCharArray(), SALT.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            secretKeyS= new SecretKeySpec(tmp.getEncoded(), "AES");
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
@@ -91,5 +104,60 @@ public class SmsSecure {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static String encryptS(String strToEncrypt) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKeyS, ivspec);
+            return Base64.getEncoder()
+                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static String decryptS(String strToDecrypt) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, secretKeyS, ivspec);
+            byte[] b = Base64.getDecoder().decode(strToDecrypt);
+            return new String(cipher.doFinal(b));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static boolean isEncrypt(String sms){
+        if (decryptS(sms) != null)
+            return true;
+        return false;
     }
 }

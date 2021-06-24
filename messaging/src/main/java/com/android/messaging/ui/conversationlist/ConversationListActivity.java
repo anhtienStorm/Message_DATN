@@ -206,59 +206,77 @@ public class ConversationListActivity extends AbstractConversationListActivity {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private void encryptAllMessage(String pass) {
+    private String encryptAllMessage(String pass) {
         SmsSecure.generateIV();
         SmsSecure.generateSecretKey(pass);
+        SmsSecure.generateSecretKeyS();
+
         Cursor cursor = getContentResolver().query(Telephony.Sms.CONTENT_URI, null,
                 null, null, null);
         int d = 0;
         while (cursor.moveToNext()) {
             String body = cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY));
             String message_id = cursor.getString(cursor.getColumnIndex(Telephony.Sms._ID));
-            ContentValues values = new ContentValues();
-            values.put(Telephony.Sms.BODY, SmsSecure.encrypt("encrypted_by_AT" + body));
-            int numRowsUpdated = getContentResolver().update(Telephony.Sms.CONTENT_URI, values,
-                    Telephony.Sms._ID + "=?",
-                    new String[]{message_id});
-            Log.d("TienNAb", "encryptAllMessage: "+message_id);
-            DeleteAllMessageAction.deleteAllMessage(message_id);
-            SyncMessagesAction.immediateSync();
-            d += numRowsUpdated;
+            if (body != null && !SmsSecure.isEncrypt(body)) {
+                ContentValues values = new ContentValues();
+                String body_encrypt = SmsSecure.encrypt(body);
+                values.put(Telephony.Sms.BODY, SmsSecure.encryptS(body_encrypt));
+                int numRowsUpdated = getContentResolver().update(Telephony.Sms.CONTENT_URI, values,
+                        Telephony.Sms._ID + "=?",
+                        new String[]{message_id});
+                d += numRowsUpdated;
+            }
         }
-        Log.d("TienNAb", "updateMessage: " + d);
+        if (d != 0) {
+            DeleteAllMessageAction.deleteAllMessage();
+            SyncMessagesAction.immediateSync();
+            Log.d("TienNAb", "updateMessage: " + d);
+            return "Done";
+        } else {
+            return "Tất cả các tin nhắn đều đã được mã hóa";
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private void decryptAllMessage(String pass) {
+    private String decryptAllMessage(String pass) {
         SmsSecure.generateIV();
         SmsSecure.generateSecretKey(pass);
+        SmsSecure.generateSecretKeyS();
+
         Cursor cursor = getContentResolver().query(Telephony.Sms.CONTENT_URI, null,
                 null, null, null);
         int d = 0;
         while (cursor.moveToNext()) {
             String body = cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY));
             String message_id = cursor.getString(cursor.getColumnIndex(Telephony.Sms._ID));
-            String decryptBody = SmsSecure.decrypt(body);
-            ContentValues values = new ContentValues();
-            if (decryptBody == null){
-                values.put(Telephony.Sms.BODY, body);
-            } else if (decryptBody.contains("encrypted_by_AT")) {
-                values.put(Telephony.Sms.BODY, decryptBody.replace("encrypted_by_AT", ""));
-            } else {
-                values.put(Telephony.Sms.BODY, body);
+            if (body == null) {
+                continue;
             }
-            int numRowsUpdated = getContentResolver().update(Telephony.Sms.CONTENT_URI, values,
-                    Telephony.Sms._ID + "=?",
-                    new String[]{message_id});
-            Log.d("TienNAb", "decryptAllMessage: "+message_id);
-            DeleteAllMessageAction.deleteAllMessage(message_id);
-            SyncMessagesAction.immediateSync();
-            d += numRowsUpdated;
+            String smsDecrypt = SmsSecure.decryptS(body);
+
+            if (smsDecrypt != null) {
+                String decryptBody = SmsSecure.decrypt(smsDecrypt);
+                if (decryptBody != null) {
+                    ContentValues values = new ContentValues();
+                    values.put(Telephony.Sms.BODY, SmsSecure.decrypt(smsDecrypt));
+                    int numRowsUpdated = getContentResolver().update(Telephony.Sms.CONTENT_URI, values,
+                            Telephony.Sms._ID + "=?",
+                            new String[]{message_id});
+                    d += numRowsUpdated;
+                }
+            }
         }
-        Log.d("TienNAb", "updateMessage: " + d);
+        if (d != 0) {
+            DeleteAllMessageAction.deleteAllMessage();
+            SyncMessagesAction.immediateSync();
+            Log.d("TienNAb", "updateMessage: " + d);
+            return "Done";
+        } else {
+            return "Sai mật khẩu hoặc không có tin nhắn mã hóa nào";
+        }
     }
 
-    private class encryptDecryptAsyncTask extends AsyncTask<String, String, Void> {
+    private class encryptDecryptAsyncTask extends AsyncTask<String, String, String> {
 
         Activity activity;
         ProgressDialog progressDialog;
@@ -268,22 +286,23 @@ public class ConversationListActivity extends AbstractConversationListActivity {
         }
 
         @Override
-        protected Void doInBackground(String... strings) {
+        protected String doInBackground(String... strings) {
             publishProgress(strings[0]);
+            String s = "";
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (ENCRYPT.equals(strings[0])) {
-                    encryptAllMessage(strings[1]);
+                    s = encryptAllMessage(strings[1]);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putBoolean(ENCRYPT, true);
                     editor.apply();
                 } else if (DECRYPT.equals(strings[0])) {
-                    decryptAllMessage(strings[1]);
+                    s = decryptAllMessage(strings[1]);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putBoolean(ENCRYPT, false);
                     editor.apply();
                 }
             }
-            return null;
+            return s;
         }
 
         @Override
@@ -300,11 +319,10 @@ public class ConversationListActivity extends AbstractConversationListActivity {
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
             progressDialog.dismiss();
-            Toast.makeText(activity, "Done", Toast.LENGTH_SHORT).show();
-//            load_list_message();
+            Toast.makeText(activity, s, Toast.LENGTH_SHORT).show();
         }
     }
 }
