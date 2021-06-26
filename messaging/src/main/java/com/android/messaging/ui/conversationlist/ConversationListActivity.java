@@ -310,12 +310,11 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             super.onProgressUpdate(values);
             progressDialog = new ProgressDialog(activity);
             progressDialog.show();
-            View view = getLayoutInflater().inflate(R.layout.progress_dialog_layout, null);
+            View view = activity.getLayoutInflater().inflate(R.layout.progress_dialog_layout, null);
             TextView textLoading = view.findViewById(R.id.text_loading);
-            textLoading.setText(values[0] + "ing...");
+            textLoading.setText("Loading...");
             progressDialog.setContentView(view);
             progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            progressDialog.setCanceledOnTouchOutside(false);
         }
 
         @Override

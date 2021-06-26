@@ -15,12 +15,22 @@
  */
 package com.android.messaging.ui.conversation;
 
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Rect;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
+
+import android.provider.Telephony;
 import android.text.Editable;
 import android.text.Html;
 import android.text.InputFilter;
@@ -29,17 +39,23 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.format.Formatter;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.messaging.Factory;
 import com.android.messaging.R;
+import com.android.messaging.SmsSecure;
+import com.android.messaging.datamodel.action.DeleteAllMessageAction;
+import com.android.messaging.datamodel.action.SyncMessagesAction;
 import com.android.messaging.datamodel.binding.Binding;
 import com.android.messaging.datamodel.binding.BindingBase;
 import com.android.messaging.datamodel.binding.ImmutableBindingRef;
@@ -302,10 +318,27 @@ public class ComposeMessageView extends LinearLayout
         mAttachMediaButton =
                 (ImageButton) findViewById(R.id.attach_media_button);
         mAttachMediaButton.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(final View clickView) {
                 // Showing the media picker is treated as starting to compose the message.
-                mInputManager.showHideMediaPicker(true /* show */, true /* animate */);
+                /*mInputManager.showHideMediaPicker(true *//* show *//*, true *//* animate *//*);*/
+
+                final BugleActionBarActivity activity = (mOriginalContext instanceof BugleActionBarActivity)
+                        ? (BugleActionBarActivity) mOriginalContext : null;
+
+                View inputPassLayout = activity.getLayoutInflater().inflate(R.layout.input_password_layout, null);
+                EditText inputPass = inputPassLayout.findViewById(R.id.input_password);
+                androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(activity);
+                builder.setTitle("Nhập vào mật khẩu")
+                        .setView(inputPassLayout)
+                        .setPositiveButton("Gửi", (dialogInterface, i) -> {
+                            if (!TextUtils.isEmpty(inputPass.getText().toString())){
+                                new EncryptAsyncTask(activity).execute(inputPass.getText().toString());
+                            }
+                        })
+                        .setNegativeButton("Huỷ", (dialogInterface, i) -> {})
+                        .create().show();
             }
         });
 
@@ -314,6 +347,17 @@ public class ComposeMessageView extends LinearLayout
 
         mMessageBodySize = (TextView) findViewById(R.id.message_body_size);
         mMmsIndicator = (TextView) findViewById(R.id.mms_indicator);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void sendMessageEncrypt(String pass){
+        SmsSecure.generateIV();
+        SmsSecure.generateSecretKey(pass);
+        SmsSecure.generateSecretKeyS();
+        String smsEncrypt = SmsSecure.encrypt(mComposeEditText.getText().toString());
+        MessageData message = MessageData.createDraftSmsMessage(mBinding.getData().getConversationId(),
+                mBinding.getData().getSelfId(), SmsSecure.encryptS(smsEncrypt));
+        mHost.sendMessage(message);
     }
 
     private void hideAttachmentsWhenShowingSims(final boolean simPickerVisible) {
@@ -1012,6 +1056,43 @@ public class ComposeMessageView extends LinearLayout
             mComposeEditText.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
             mSendButton.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
             mAttachMediaButton.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+    }
+
+    private class EncryptAsyncTask extends AsyncTask<String, Void, Void>{
+
+        Activity activity;
+        ProgressDialog progressDialog;
+
+        public EncryptAsyncTask(Activity activity){
+            this.activity = activity;
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        @Override
+        protected Void doInBackground(String... strings) {
+            publishProgress();
+            sendMessageEncrypt(strings[0]);
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            progressDialog = new ProgressDialog(activity);
+            progressDialog.show();
+            View view = activity.getLayoutInflater().inflate(R.layout.progress_dialog_layout, null);
+            TextView textLoading = view.findViewById(R.id.text_loading);
+            textLoading.setText("Sending...");
+            progressDialog.setContentView(view);
+            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            progressDialog.dismiss();
+            Toast.makeText(activity, "Done", Toast.LENGTH_SHORT).show();
         }
     }
 }
