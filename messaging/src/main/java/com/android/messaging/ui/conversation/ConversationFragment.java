@@ -35,14 +35,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Parcelable;
+
+import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.core.text.BidiFormatter;
 import androidx.core.text.TextDirectionHeuristicsCompat;
@@ -52,6 +56,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -66,6 +71,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.messaging.R;
+import com.android.messaging.SmsSecure;
 import com.android.messaging.datamodel.DataModel;
 import com.android.messaging.datamodel.MessagingContentProvider;
 import com.android.messaging.datamodel.action.InsertNewMessageAction;
@@ -110,6 +116,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -134,6 +141,8 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
     }
 
     public static final String FRAGMENT_TAG = "conversation";
+
+    private String mPassword = "anh";
 
     static final int REQUEST_CHOOSE_ATTACHMENTS = 2;
     private static final int JUMP_SCROLL_THRESHOLD = 15;
@@ -832,12 +841,32 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
             builder.setTitle("Nhập vào mật khẩu")
                     .setView(inputPassLayout)
                     .setPositiveButton("Ok", (dialogInterface, i) -> {
-//                        new DecryptAsyncTask(this).execute(inputPass.getText().toString());
+                        if (!TextUtils.isEmpty(inputPass.getText().toString())){
+                            mPassword = inputPass.getText().toString();
+                            mAdapter.notifyDataSetChanged();
+                        }
                     })
                     .setNegativeButton("Huỷ", (dialogInterface, i) -> {})
                     .create().show();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private String decryptText(String text){
+        String s = null;
+        if (text != null) {
+            String smsDecrypt = SmsSecure.decryptS(text);
+            if (smsDecrypt != null) {
+                String decryptBody = SmsSecure.decrypt(smsDecrypt);
+                if (decryptBody != null) {
+                    return SmsSecure.decrypt(smsDecrypt);
+                }
+                return text;
+            }
+            return text;
+        }
+        return text;
     }
 
     /**
@@ -848,6 +877,33 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
             final Cursor cursor, final ConversationMessageData newestMessage,
             final boolean isSync) {
         mBinding.ensureBound(data);
+
+        MatrixCursor c = null;
+        if (cursor != null){
+            SmsSecure.generateIV();
+            SmsSecure.generateSecretKey(mPassword);
+            SmsSecure.generateSecretKeyS();
+
+            c = new MatrixCursor(cursor.getColumnNames());
+            MatrixCursor.RowBuilder rowBuilder = c.newRow();
+            cursor.moveToFirst();
+            for (int i = 0; i < cursor.getColumnCount(); i++){
+                rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
+            }
+            while (cursor.moveToNext()) {
+                rowBuilder = c.newRow();
+                for (int i = 0; i < cursor.getColumnCount(); i++){
+                    if (i == 8) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            rowBuilder.add(cursor.getColumnName(i), decryptText(cursor.getString(i)));
+                        }
+                    } else {
+                        rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
+                    }
+                }
+            }
+        }
+
 
         // This needs to be determined before swapping cursor, which may change the scroll state.
         final boolean scrolledToBottom = isScrolledToBottom();
@@ -860,7 +916,7 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
 
         // Ensure that the action bar is updated with the current data.
         invalidateOptionsMenu();
-        final Cursor oldCursor = mAdapter.swapCursor(cursor);
+        final Cursor oldCursor = mAdapter.swapCursor(c);
 
         if (cursor != null && oldCursor == null) {
             if (mListState != null) {

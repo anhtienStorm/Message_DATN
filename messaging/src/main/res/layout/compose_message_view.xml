@@ -103,16 +103,26 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
+<!--                    <ImageButton-->
+<!--                        android:id="@+id/attach_media_button"-->
+<!--                        style="@style/ComposeMessageViewAttachMediaButtonStyle"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_gravity="center_vertical"-->
+<!--                        android:src="@drawable/ic_attachment_dark"-->
+<!--                        android:paddingTop="@dimen/compose_message_attachment_padding_topBottom"-->
+<!--                        android:paddingBottom="@dimen/compose_message_attachment_padding_topBottom"-->
+<!--                        android:contentDescription="@string/attachMediaButtonContentDescription" />-->
                     <ImageButton
                         android:id="@+id/attach_media_button"
                         style="@style/ComposeMessageViewAttachMediaButtonStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:src="@drawable/ic_attachment_dark"
-                        android:paddingTop="@dimen/compose_message_attachment_padding_topBottom"
-                        android:paddingBottom="@dimen/compose_message_attachment_padding_topBottom"
-                        android:contentDescription="@string/attachMediaButtonContentDescription" />
+                        android:layout_width="@dimen/conversation_message_contact_icon_size"
+                        android:layout_height="@dimen/conversation_message_contact_icon_size"
+                        android:tint="@color/white"
+                        android:layout_marginLeft="7dp"
+                        android:layout_marginRight="7dp"
+                        android:src="@drawable/ic_send_message_encrypted"
+                        android:background="@drawable/send_arrow_background"/>
 
                     <com.android.messaging.ui.PlainTextEditText
                         android:id="@+id/compose_message_text"
@@ -162,8 +172,7 @@
                         android:layout_height="@dimen/conversation_message_contact_icon_size"
                         android:src="@drawable/ic_send_light"
                         android:background="@drawable/send_arrow_background"
-                        android:contentDescription="@string/sendButtonContentDescription"
-                        android:visibility="gone" />
+                        android:contentDescription="@string/sendButtonContentDescription" />
                 </FrameLayout>
 
                 <TextView
