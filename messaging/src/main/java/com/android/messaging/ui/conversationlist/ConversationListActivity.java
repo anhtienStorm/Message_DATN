@@ -32,6 +32,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 
 import android.provider.Telephony;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -137,8 +138,13 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             encryptDialogBuilder.setTitle("Nhập vào mật khẩu")
                     .setView(inputPassEncryptLayout)
                     .setPositiveButton("Ok", (dialogInterface, i) -> {
-                        new encryptDecryptAsyncTask(this).execute(
-                                ENCRYPT, inputPassEncrypt.getText().toString());
+                        String text = inputPassEncrypt.getText().toString().trim();
+                        if (text.length() < 4) {
+                            Toast.makeText(this, "Mật khẩu nên có từ 4 ký tự trở lên", Toast.LENGTH_SHORT).show();
+                        } else {
+                            new encryptDecryptAsyncTask(this).execute(
+                                    ENCRYPT, text);
+                        }
                     })
                     .setNegativeButton("Huỷ", (dialogInterface, i) -> {
                     });
@@ -153,8 +159,11 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             decryptDialogBuilder.setTitle("Nhập vào mật khẩu")
                     .setView(inputPassDecryptLayout)
                     .setPositiveButton("Ok", (dialogInterface, i) -> {
-                        new encryptDecryptAsyncTask(this).execute(
-                                DECRYPT, inputPassDecrypt.getText().toString());
+                        String text = inputPassDecrypt.getText().toString().trim();
+                        if (!TextUtils.isEmpty(text)) {
+                            new encryptDecryptAsyncTask(this).execute(
+                                    DECRYPT, text);
+                        }
                     })
                     .setNegativeButton("Huỷ", (dialogInterface, i) -> {
                     });

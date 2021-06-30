@@ -333,8 +333,11 @@ public class ComposeMessageView extends LinearLayout
                 builder.setTitle("Nhập vào mật khẩu")
                         .setView(inputPassLayout)
                         .setPositiveButton("Gửi", (dialogInterface, i) -> {
-                            if (!TextUtils.isEmpty(inputPass.getText().toString())){
-                                new EncryptAsyncTask(activity).execute(inputPass.getText().toString());
+                            String text = inputPass.getText().toString().trim();
+                            if (text.length() < 4) {
+                                Toast.makeText(getContext(), "Mật khẩu nên có từ 4 ký tự trở lên", Toast.LENGTH_SHORT).show();
+                            } else {
+                                new EncryptAsyncTask(activity).execute(text);
                             }
                         })
                         .setNegativeButton("Huỷ", (dialogInterface, i) -> {})
@@ -1092,7 +1095,8 @@ public class ComposeMessageView extends LinearLayout
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             progressDialog.dismiss();
-            Toast.makeText(activity, "Done", Toast.LENGTH_SHORT).show();
+            mComposeEditText.setText("");
+            Toast.makeText(activity, "Message sent", Toast.LENGTH_SHORT).show();
         }
     }
 }

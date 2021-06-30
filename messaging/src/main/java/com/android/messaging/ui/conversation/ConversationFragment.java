@@ -23,6 +23,7 @@ import android.app.DownloadManager;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -33,6 +34,7 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.MatrixCursor;
@@ -40,6 +42,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -841,8 +844,9 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
             builder.setTitle("Nhập vào mật khẩu")
                     .setView(inputPassLayout)
                     .setPositiveButton("Ok", (dialogInterface, i) -> {
-                        if (!TextUtils.isEmpty(inputPass.getText().toString())){
-                            mPassword = inputPass.getText().toString();
+                        String text = inputPass.getText().toString().trim();
+                        if (!TextUtils.isEmpty(text)){
+                            mPassword = text;
                             mBinding.getData().restartLoaderConversation(mBinding);
                         }
                     })
@@ -852,9 +856,11 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
         return super.onOptionsItemSelected(item);
     }
 
+    private String resultDecrypt;
+    private ProgressDialog progressDialog;
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private String decryptText(String text){
-        String s = null;
         if (text != null) {
             String smsDecrypt = SmsSecure.decryptS(text);
             if (smsDecrypt != null) {
@@ -869,6 +875,52 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
         return text;
     }
 
+    private MatrixCursor decryptConversation(Cursor cursor){
+        SmsSecure.generateIV();
+        SmsSecure.generateSecretKey(mPassword);
+        SmsSecure.generateSecretKeyS();
+
+        int d = 0;
+        MatrixCursor c = new MatrixCursor(cursor.getColumnNames());
+        MatrixCursor.RowBuilder rowBuilder = c.newRow();
+        cursor.moveToFirst();
+        for (int i = 0; i < cursor.getColumnCount(); i++){
+            if (i == 8) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    String decryptText = decryptText(cursor.getString(i));
+                    rowBuilder.add(cursor.getColumnName(i), decryptText);
+                    if (!cursor.getString(i).equals(decryptText)) {
+                        d++;
+                    }
+                }
+            } else {
+                rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
+            }
+        }
+        while (cursor.moveToNext()) {
+            rowBuilder = c.newRow();
+            for (int i = 0; i < cursor.getColumnCount(); i++){
+                if (i == 8) {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        String decryptText = decryptText(cursor.getString(i));
+                        rowBuilder.add(cursor.getColumnName(i), decryptText);
+                        if (!cursor.getString(i).equals(decryptText)) {
+                            d++;
+                        }
+                    }
+                } else {
+                    rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
+                }
+            }
+        }
+        if (d == 0) {
+            resultDecrypt = "Sai mật khẩu hoặc không có tin nhắn mã hóa nào";
+        } else {
+            resultDecrypt = "Các tin nhắn mã hóa đã được giải mã";
+        }
+        return c;
+    }
+
     /**
      * {@inheritDoc} from ConversationDataListener
      */
@@ -880,37 +932,9 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
 
         MatrixCursor c = null;
         if (cursor != null && mPassword != null){
-            SmsSecure.generateIV();
-            SmsSecure.generateSecretKey(mPassword);
-            SmsSecure.generateSecretKeyS();
-
-            c = new MatrixCursor(cursor.getColumnNames());
-            MatrixCursor.RowBuilder rowBuilder = c.newRow();
-            cursor.moveToFirst();
-            for (int i = 0; i < cursor.getColumnCount(); i++){
-                if (i == 8) {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        rowBuilder.add(cursor.getColumnName(i), decryptText(cursor.getString(i)));
-                    }
-                } else {
-                    rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
-                }
-            }
-            while (cursor.moveToNext()) {
-                rowBuilder = c.newRow();
-                for (int i = 0; i < cursor.getColumnCount(); i++){
-                    if (i == 8) {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                            rowBuilder.add(cursor.getColumnName(i), decryptText(cursor.getString(i)));
-                        }
-                    } else {
-                        rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
-                    }
-                }
-            }
+            c = decryptConversation(cursor);
+            Toast.makeText(getActivity(), resultDecrypt, Toast.LENGTH_SHORT).show();
         }
-
-
         // This needs to be determined before swapping cursor, which may change the scroll state.
         final boolean scrolledToBottom = isScrolledToBottom();
         final int positionFromBottom = getScrollPositionFromBottom();
