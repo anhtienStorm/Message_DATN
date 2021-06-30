@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:Android="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/encrypt_message"
+        android:title="Mã hóa Tin nhắn"
+        android:orderInCategory="200"
+        Android:showAsAction="never" />
+
+    <item
+        android:id="@+id/decrypt_message"
+        android:title="Giải mã Tin nhắn"
+        android:orderInCategory="300"
+        Android:showAsAction="never" />
+
+</menu>

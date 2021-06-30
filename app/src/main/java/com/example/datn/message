@@ -1,0 +1,73 @@
+0: _id: 84
+1: thread_id: 8
+2: address: NAPTHE_VT
+3: person: null
+4: date: 1618802220788
+5: date_sent: 1618801881000
+6: protocol: 127
+7: read: 1
+8: status: -1
+9: type: 1
+10: reply_path_present: 0
+11: subject: null
+12: body: [TB] TẶNG 20% GIÁ TRỊ TẤT CẢ THẺ NẠP trong ngày 20/04. Tiền KM sử dụng nội, ngoại mạng đến hết 05/05/2021. Giảm thêm 3% khi nạp thẻ tại https://myvt.page.link/km . Chi tiết gọi 197 bấm phím 19 (0đ). Trân trọng.
+13: service_center: +84980200904
+14: locked: 0
+15: sub_id: 1
+16: error_code: 0
+17: creator: bkav.android.btalk
+18: seen: 1
+19: iccid: 89840488310045541569
+20: priority: -1
+
+
+
+
+
+
+
+
+
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/0: _id: 90
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/1: thread_id: 55
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/2: address: +84336064016
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/3: person: null
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/4: date: 1618892190229
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/5: date_sent: 1618892188000
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/6: protocol: 0
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/7: read: 1
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/8: status: -1
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/9: type: 1
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/10: reply_path_present: 0
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/11: subject: null
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/12: body: Abc
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/13: service_center: +84980200625
+2021-04-20 11:28:58.228 23466-23466/com.example.datn D/14: locked: 0
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/15: sub_id: 1
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/16: error_code: 0
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/17: creator: bkav.android.btalk
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/18: seen: 1
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/19: iccid: 89840488310045541569
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/20: priority: -1
+
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/0: _id: 89
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/1: thread_id: 55
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/2: address: 0336064016
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/3: person: null
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/4: date: 1618892188862
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/5: date_sent: 1618892190509
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/6: protocol: null
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/7: read: 1
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/8: status: 0
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/9: type: 2
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/10: reply_path_present: null
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/11: subject: null
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/12: body: Abc
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/13: service_center: null
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/14: locked: 0
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/15: sub_id: 1
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/16: error_code: 0
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/17: creator: bkav.android.btalk
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/18: seen: 1
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/19: iccid: 89840488310045541569
+2021-04-20 11:28:58.229 23466-23466/com.example.datn D/20: priority: -1

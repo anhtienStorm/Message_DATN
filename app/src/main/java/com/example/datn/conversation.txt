@@ -1,0 +1,14 @@
+0 - date: 1618802220788
+6 - reply_path_present: 0
+7 - body: [TB] TẶNG 20% GIÁ TRỊ TẤT CẢ THẺ NẠP trong ngày 20/04. Tiền KM sử dụng nội, ngoại mạng đến hết 05/05/2021. Giảm thêm 3% khi nạp thẻ tại https://myvt.page.link/km . Chi tiết gọi 197 bấm phím 19 (0đ). Trân trọng.
+8 - type: 1
+10 - thread_id: 8
+15 - locked: 0
+20 - date_sent: 1618801881000
+21 - read: 1
+25 - address: NAPTHE_VT
+26 - sub_id: 1
+35 - service_center: +84980200904
+36 - error_code: 0
+37 - _id: 84
+39 - status: -1
