@@ -539,6 +539,12 @@ public class ConversationData extends BindableData {
         mLoaderManager.initLoader(SELF_PARTICIPANT_LOADER, args, mSelfParticipantLoaderCallbacks);
     }
 
+    public void restartLoaderConversation(final BindingBase<ConversationData> binding){
+        final Bundle args = new Bundle();
+        args.putString(BINDING_ID, binding.getBindingId());
+        mLoaderManager.restartLoader(CONVERSATION_MESSAGES_LOADER, args, mMessagesLoaderCallbacks);
+    }
+
     @Override
     protected void unregisterListeners() {
         mListeners.clear();

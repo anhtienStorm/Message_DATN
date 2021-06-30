@@ -142,7 +142,7 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
 
     public static final String FRAGMENT_TAG = "conversation";
 
-    private String mPassword = "anh";
+    private String mPassword;
 
     static final int REQUEST_CHOOSE_ATTACHMENTS = 2;
     private static final int JUMP_SCROLL_THRESHOLD = 15;
@@ -843,7 +843,7 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
                     .setPositiveButton("Ok", (dialogInterface, i) -> {
                         if (!TextUtils.isEmpty(inputPass.getText().toString())){
                             mPassword = inputPass.getText().toString();
-                            mAdapter.notifyDataSetChanged();
+                            mBinding.getData().restartLoaderConversation(mBinding);
                         }
                     })
                     .setNegativeButton("Huỷ", (dialogInterface, i) -> {})
@@ -879,7 +879,7 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
         mBinding.ensureBound(data);
 
         MatrixCursor c = null;
-        if (cursor != null){
+        if (cursor != null && mPassword != null){
             SmsSecure.generateIV();
             SmsSecure.generateSecretKey(mPassword);
             SmsSecure.generateSecretKeyS();
@@ -888,7 +888,13 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
             MatrixCursor.RowBuilder rowBuilder = c.newRow();
             cursor.moveToFirst();
             for (int i = 0; i < cursor.getColumnCount(); i++){
-                rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
+                if (i == 8) {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        rowBuilder.add(cursor.getColumnName(i), decryptText(cursor.getString(i)));
+                    }
+                } else {
+                    rowBuilder.add(cursor.getColumnName(i), cursor.getString(i));
+                }
             }
             while (cursor.moveToNext()) {
                 rowBuilder = c.newRow();
@@ -916,7 +922,12 @@ public class ConversationFragment extends Fragment implements ConversationDataLi
 
         // Ensure that the action bar is updated with the current data.
         invalidateOptionsMenu();
-        final Cursor oldCursor = mAdapter.swapCursor(c);
+        final Cursor oldCursor;
+        if (cursor != null && mPassword != null){
+            oldCursor = mAdapter.swapCursor(c);
+        } else {
+            oldCursor = mAdapter.swapCursor(cursor);
+        }
 
         if (cursor != null && oldCursor == null) {
             if (mListState != null) {
