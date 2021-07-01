@@ -63,6 +63,7 @@ import com.android.messaging.datamodel.media.VideoThumbnailRequest;
 import com.android.messaging.sms.MmsSmsUtils;
 import com.android.messaging.sms.MmsUtils;
 import com.android.messaging.ui.UIIntents;
+import com.android.messaging.ui.conversationlist.ConversationListActivity;
 import com.android.messaging.util.Assert;
 import com.android.messaging.util.AvatarUriUtil;
 import com.android.messaging.util.BugleGservices;
@@ -838,6 +839,7 @@ public class BugleNotifications {
 
         // Apply the wearable options and build & post the notification
         notifBuilder.extend(wearableExtender);
+        notifBuilder.setChannelId(ConversationListActivity.CHANNEL_ID);
         doNotify(notifBuilder.build(), notificationState);
     }
 
@@ -908,8 +910,7 @@ public class BugleNotifications {
         final String[] choices = context.getResources().getStringArray(
                 R.array.notification_reply_choices);
         final RemoteInput remoteInput = new RemoteInput.Builder(Intent.EXTRA_TEXT).setLabel(
-                context.getString(R.string.notification_reply_prompt)).
-                setChoices(choices)
+                context.getString(R.string.notification_reply_prompt))
                 .build();
         actionBuilder.addRemoteInput(remoteInput);
         wearableExtender.addAction(actionBuilder.build());

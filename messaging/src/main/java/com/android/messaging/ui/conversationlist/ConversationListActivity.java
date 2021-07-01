@@ -17,11 +17,16 @@
 package com.android.messaging.ui.conversationlist;
 
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
+import android.app.role.RoleManager;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -55,6 +60,8 @@ public class ConversationListActivity extends AbstractConversationListActivity {
     private static final String MY_PREFS = "MyPrefs";
     private static final String ENCRYPT = "Encrypt";
     private static final String DECRYPT = "Decrypt";
+    public static final String CHANNEL_ID = "channel_id";
+    private static final String CHANNEL_NAME = "Tin Nhắn";
 
     SharedPreferences sharedPreferences;
 
@@ -67,6 +74,23 @@ public class ConversationListActivity extends AbstractConversationListActivity {
         invalidateActionBar();
 
         sharedPreferences = getSharedPreferences(MY_PREFS, MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void createNotificationChannel(){
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance);
+        notificationChannel.enableLights(true);
+        notificationChannel.setLightColor(Color.RED);
+        notificationChannel.enableVibration(true);
+        notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+        notificationManager.createNotificationChannel(notificationChannel);
     }
 
     @Override
@@ -126,12 +150,20 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             onActionBarDebug();
             return true;
         } else if (itemId == R.id.action_show_archived) {
+            if (!checkAppSMSDefault()){
+                Toast.makeText(this, "Vui lòng đặt app làm app nhắn tin mặc định trước !", Toast.LENGTH_SHORT).show();
+                return false;
+            }
             onActionBarArchived();
             return true;
         } else if (itemId == R.id.action_show_blocked_contacts) {
             onActionBarBlockedParticipants();
             return true;
         } else if (itemId == R.id.action_encrypt) {
+            if (!checkAppSMSDefault()){
+                Toast.makeText(this, "Vui lòng đặt app làm app nhắn tin mặc định trước !", Toast.LENGTH_SHORT).show();
+                return false;
+            }
             View inputPassEncryptLayout = getLayoutInflater().inflate(R.layout.input_password_layout, null);
             EditText inputPassEncrypt = inputPassEncryptLayout.findViewById(R.id.input_password);
             AlertDialog.Builder encryptDialogBuilder = new AlertDialog.Builder(this);
@@ -153,6 +185,10 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             EncryptAlertDialog.show();
             return true;
         } else if (itemId == R.id.action_decrypt) {
+            if (!checkAppSMSDefault()){
+                Toast.makeText(this, "Vui lòng đặt app làm app nhắn tin mặc định trước !", Toast.LENGTH_SHORT).show();
+                return false;
+            }
             View inputPassDecryptLayout = getLayoutInflater().inflate(R.layout.input_password_layout, null);
             EditText inputPassDecrypt = inputPassDecryptLayout.findViewById(R.id.input_password);
             AlertDialog.Builder decryptDialogBuilder = new AlertDialog.Builder(this);
@@ -173,6 +209,28 @@ public class ConversationListActivity extends AbstractConversationListActivity {
             return true;
         }
         return super.onOptionsItemSelected(menuItem);
+    }
+
+    private boolean checkAppSMSDefault() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            RoleManager roleManager = getSystemService(RoleManager.class);
+            boolean isRoleAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_SMS);
+            if (isRoleAvailable) {
+                boolean isRoleHeld = roleManager.isRoleHeld(RoleManager.ROLE_SMS);
+                if (!isRoleHeld) {
+                    return false;
+                }
+                return true;
+            }
+        } else {
+            String currentDefault = Telephony.Sms.getDefaultSmsPackage(this);
+            boolean isDefault = getPackageName().equals(currentDefault);
+            if (!isDefault) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
